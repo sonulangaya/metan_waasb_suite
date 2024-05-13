@@ -1,6 +1,6 @@
-######### Genotype × environment interaction and Stability analysis ############
+###### Genotype × environment interaction and Stability analysis ##############
 
-##################### Stability analysis with metan ############################
+######################Stability analysis with metan ############################
 ############################## WAASB Model #####################################
 
 library(metan)
@@ -121,16 +121,18 @@ saveWorkbook(twgy_wb, file.path("output", "TWmean.xlsx"), overwrite = TRUE)
 
 ################### plotting performance across environments ###################
 #################### make performance for all traits in one ####################
+################################## Heatmap #####################################
 
-perfor_list <- list()
+perfor_heat_list <- list()
 
 for (trait in traitall) {
-  perfor_list[[trait]] <-
+  perfor_heat_list[[trait]] <-
     ge_plot(
       stabdata,
       ENV,
       GEN,
       !!sym(trait),
+      type = 1,
       values = FALSE,
       average = FALSE,
       text_col_pos = c("bottom"),
@@ -142,13 +144,13 @@ for (trait in traitall) {
       plot_theme = theme_metan(),
       colour = TRUE
     ) + geom_tile(color = "transparent") + labs(title = paste0(trait, " performance across eight environments")) + theme(legend.title = element_text(), axis.text.x.bottom = element_text(angle = 0, hjust = .5)) + guides(fill = guide_colourbar(title = trait, barwidth = 1.5, barheight = 20))
-  assign(paste0(trait, "_perfor"), perfor_list[[trait]])
+  assign(paste0(trait, "_perfor_heat"), perfor_heat_list[[trait]])
 }
 
 ############################## print all plots once ############################
 
 for (trait in traitall) {
-  print(perfor_list[[trait]])
+  print(perfor_heat_list[[trait]])
 }
 
 ##################### high quality save all in one  ############################
@@ -157,13 +159,61 @@ if (!file.exists("output")) {
   dir.create("output")
 }
 
-if (!file.exists(file.path("output", "perfor_plots"))) {
-  dir.create(file.path("output", "perfor_plots"))
+if (!file.exists(file.path("output", "perfor_heat_plot"))) {
+  dir.create(file.path("output", "perfor_heat_plot"))
 }
 
 for (trait in traitall) {
-  ggsave(filename = file.path("output", "perfor_plots", paste0(trait, ".png")),
-         plot = perfor_list[[trait]], width = 20, height = 30,
+  ggsave(filename = file.path("output", "perfor_heat_plot", paste0(trait, ".png")),
+         plot = perfor_heat_list[[trait]], width = 20, height = 30,
+         dpi = 600, units = "cm")
+}
+
+################################# Line plot ####################################
+
+perfor_line_list <- list()
+
+for (trait in traitall) {
+  perfor_line_list[[trait]] <-
+    ge_plot(
+      stabdata,
+      ENV,
+      GEN,
+      !!sym(trait),
+      type = 1,
+      values = FALSE,
+      average = FALSE,
+      text_col_pos = c("bottom"),
+      text_row_pos = c("left"),
+      width_bar = 1.5,
+      heigth_bar = 20,
+      xlab = "ENV",
+      ylab = "GEN",
+      plot_theme = theme_metan(),
+      colour = TRUE
+    ) + geom_tile(color = "transparent") + labs(title = paste0(trait, " performance across eight environments")) + theme(legend.title = element_text(), axis.text.x.bottom = element_text(angle = 0, hjust = .5)) + guides(fill = guide_colourbar(title = trait, barwidth = 1.5, barheight = 20))
+  assign(paste0(trait, "_perfor_line"), perfor_line_list[[trait]])
+}
+
+############################## print all plots once ############################
+
+for (trait in traitall) {
+  print(perfor_line_list[[trait]])
+}
+
+##################### high quality save all in one  ############################
+
+if (!file.exists("output")) {
+  dir.create("output")
+}
+
+if (!file.exists(file.path("output", "perfor_line_plot"))) {
+  dir.create(file.path("output", "perfor_line_plot"))
+}
+
+for (trait in traitall) {
+  ggsave(filename = file.path("output", "perfor_line_plot", paste0(trait, ".png")),
+         plot = perfor_line_list[[trait]], width = 20, height = 30,
          dpi = 600, units = "cm")
 }
 
@@ -244,6 +294,55 @@ if (!file.exists(file.path("output", "ge_plots"))) {
 for (trait in traitall) {
   ggsave(filename = file.path("output", "ge_plots", paste0(trait, ".png")),
          plot = ge_plots[[trait]], width = 20, height = 30,
+         dpi = 600, units = "cm")
+}
+
+########################## gge effects to excel ################################
+
+gge_list <- ge_effects(stabdata, ENV, GEN, resp = everything(), type = "gge")
+
+result_gge_list <- list()
+for (trait in traitall) {
+  gge_list_result <- as.data.frame(gge_list[[trait]])
+  result_gge_list[[trait]] <- gge_list_result
+}
+
+########################### save all in one excel  #############################
+
+gge_list_wb <- createWorkbook()
+for (trait in traitall) {
+  addWorksheet(gge_list_wb, sheetName = paste0(trait, ""))
+  writeData(gge_list_wb, sheet = trait, x = result_gge_list[[trait]])
+}
+saveWorkbook(gge_list_wb, file.path("output","gge_effects.xlsx"), overwrite = TRUE)
+
+############################## ge effects plots ################################
+
+gge_plots <- list()
+
+for (trait in traitall) {
+  gge_plots[[trait]] <- plot(gge_list) + aes(ENV, GEN) + theme(legend.title = element_text()) + guides(fill = guide_colourbar(title = paste0(trait, " gge effects"), barwidth = 1.5, barheight = 20))
+}  ## also coord_flip() in place of aes
+
+################# print all plots once #########################################
+
+for (trait in traitall) {
+  print(gge_plots[[trait]])
+}
+
+##################### high quality save all in one  ############################
+
+if (!file.exists("output")) {
+  dir.create("output")
+}
+
+if (!file.exists(file.path("output", "gge_plots"))) {
+  dir.create(file.path("output", "gge_plots"))
+}
+
+for (trait in traitall) {
+  ggsave(filename = file.path("output", "gge_plots", paste0(trait, ".png")),
+         plot = gge_plots[[trait]], width = 20, height = 30,
          dpi = 600, units = "cm")
 }
 
